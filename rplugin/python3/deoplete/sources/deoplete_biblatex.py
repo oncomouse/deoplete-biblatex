@@ -7,22 +7,7 @@ from shlex import quote
 from .base import Base
 from deoplete.util import load_external_module
 
-# import bibtexparser
-
 load_external_module(__file__, 'sources/deoplete_biblatex')
-
-MY_CODES = {
-    'lion:': 'test',
-    'tandem:': 'test',
-}
-
-
-# def bibtexparser_customizations(record):
-#     record = bibtexparser.customization.author(record)
-#     record = bibtexparser.customization.editor(record)
-#     record = bibtexparser.customization.add_plaintext_fields(record)
-#     return record
-
 
 class Source(Base):
     def __init__(self, vim):
@@ -31,23 +16,32 @@ class Source(Base):
         self.filetypes = ['pandoc', 'markdown']
         self.mark = '[bib]'
         self.name = 'biblatex'
+        self.vars = {
+            'bibfile': '~/bibliography.bib',
+            'delimiter': ',',
+            'startpattern': r'\[(?:[\w,]+:)?',
+            'keypattern': r'@?[\w-]+',
+            'reloadbibfileonchange': 0,
+            'addinfo': 0
+        }
 
     def __make_dictionary(self, line):
-        match = re.match(r'(^.*?)\s+\(([0-9]{4})\) (.*?),.*?,.*\[([^\]]+)\] \@(.*)$', line)
+        match = re.match(r'(^.*?)\s+\(([0-9]{0,4})\) (.*?)\[([^\]]+)\] \@(.*)$', line)
         if match:
             return {
                 "author": match.group(1),
                 "plain_date": match.group(2),
-                "plain_title": match.group(3),
-                "TYPE": match.group(4),
+                "plain_title": match.group(3).split(",")[0],
+                "ENTRYTYPE": match.group(4),
                 "ID": match.group(5)
             }
         else:
-            print("Error: {}".format(line))
             return None
 
     @property
     def __bibliography(self):
+        # output = re.sub(r'\x1b\[.*?m','', subprocess.Popen("bibtex-ls {}".format(quote(self.__bib_file)), stdout=subprocess.PIPE, shell=True).communicate()[0].decode("utf-8")).split("\n")[0:-1]
+        # return [i for i in list(map(self.__make_dictionary, output)) if i]
         if self.__reload_bibfile_on_change:
             mtime = os.stat(self.__bib_file).st_mtime
             if mtime != self.__bib_file_mtime:
@@ -57,31 +51,12 @@ class Source(Base):
         return self.__bibliography_cached
 
     def __read_bib_file(self):
-        output = re.sub(r'\x1b\[.*?m','', subprocess.Popen("bibtex-ls {}".format(self.__bib_file), stdout=subprocess.PIPE, shell=True).communicate()[0].decode("utf-8")).split("\n")[0:-1]
-        self.__bibliography_cached = list(map(self.__make_dictionary, output))
-    #     try:
-    #         with open(self.__bib_file) as bf:
-    #             parser = bibtexparser.bparser.BibTexParser(
-    #                 ignore_nonstandard_types=False,
-    #             )
-    #             parser.customization = bibtexparser_customizations
-    #             bibliography = bibtexparser.load(
-    #                 bf,
-    #                 parser=parser,
-    #             ).entries_dict
-
-    #             self.__bibliography_cached = bibliography
-    #     except FileNotFoundError:
-    #         self.vim.err_write(
-    #             '[deoplete-biblatex] No such file: {0}\n'.format(
-    #                 self.__bib_file,
-    #             ),
-    #         )
+        output = re.sub(r'\x1b\[.*?m','', subprocess.Popen("bibtex-ls {}".format(quote(self.__bib_file)), stdout=subprocess.PIPE, shell=True).communicate()[0].decode("utf-8")).split("\n")[0:-1]
+        self.__bibliography_cached = [i for i in list(map(self.__make_dictionary, output)) if i]
 
     def on_init(self, context):
-        bib_file = context['vars'].get(
-            'deoplete#sources#biblatex#bibfile',
-            '~/bibliography.bib'
+        bib_file = self.get_var(
+            'bibfile'
         )
         bib_file = os.path.abspath(os.path.expanduser(bib_file))
 
@@ -89,17 +64,14 @@ class Source(Base):
         self.__bib_file_mtime = os.stat(bib_file).st_mtime
         self.__read_bib_file()
 
-        pattern_delimiter = context['vars'].get(
-            'deoplete#sources#biblatex#delimiter',
-            ',',
+        pattern_delimiter = self.get_var(
+            'delimiter'
         )
-        pattern_start = context['vars'].get(
-            'deoplete#sources#biblatex#startpattern',
-            r'\[(?:[\w,]+:)?',
+        pattern_start = self.get_var(
+            'startpattern'
         )
-        pattern_key = context['vars'].get(
-            'deoplete#sources#biblatex#keypattern',
-            r'@?[\w-]+',
+        pattern_key = self.get_var(
+            'keypattern'
         )
 
         pattern_current = r'{}$'.format(pattern_key)
@@ -111,22 +83,25 @@ class Source(Base):
             + pattern_current
         )
 
-        reload_bibfile_on_change = context['vars'].get(
-            'deoplete#sources#biblatex#reloadbibfileonchange',
-            0,
+        reload_bibfile_on_change = self.get_var(
+            'reloadbibfileonchange'
         )
         reload_bibfile_on_change = bool(reload_bibfile_on_change)
 
         self.__reload_bibfile_on_change = reload_bibfile_on_change
 
-        add_info = context['vars'].get(
-            'deoplete#sources#biblatex#addinfo',
-            0,
+        add_info = self.get_var(
+            'addinfo'
         )
         add_info = bool(add_info)
 
         self.__add_info = add_info
 
+    def __format_menu(self, entry):
+        return '{title}'.format(
+            title=('{}'.format(entry['plain_title'])
+                   if 'plain_title' in entry else '')
+        )
     def __format_info(self, entry):
         return '{title}{author}{date}'.format(
             title=('Title: {}\n'.format(entry['plain_title'])
@@ -134,11 +109,11 @@ class Source(Base):
             author=(
                 'Author{plural}: {author}\n'.format(
                     plural='s' if len(entry['author']) > 1 else '',
-                    author='; '.join(entry['author']),
+                    author=entry['author'],
                 )
                 if 'author' in entry else ''
             ),
-            date=('Year: {}\n'.format(entry['plain_date'].split('-')[0])
+            date=('Year: {}\n'.format(entry['plain_date'])
                   if 'plain_date' in entry else ''),
         )
 
@@ -148,6 +123,7 @@ class Source(Base):
             'word': entry['ID'],
             'kind': entry['ENTRYTYPE'],
         }
+        candidate['menu'] = self.__format_menu(entry)
 
         if self.__add_info:
             candidate['info'] = self.__format_info(entry)
@@ -157,7 +133,8 @@ class Source(Base):
     def gather_candidates(self, context):
         if self.__pattern.search(context['input']):
             candidates = [
-                self.__entry_to_candidate(entry) for entry in self.__bibliography
+                self.__entry_to_candidate(entry)
+                for entry in self.__bibliography
             ]
             return candidates
         else:
