@@ -142,7 +142,6 @@ class Source(Base):
         )
 
     def __entry_to_candidate(self, entry):
-        print(entry)
         candidate = {
             'abbr': entry['ID'],
             'word': entry['ID'],
@@ -157,8 +156,7 @@ class Source(Base):
     def gather_candidates(self, context):
         if self.__pattern.search(context['input']):
             candidates = [
-                self.__entry_to_candidate(entry)
-                for entry in self.__bibliography
+                self.__entry_to_candidate(entry) for entry in self.__bibliography
             ]
             return candidates
         else:
