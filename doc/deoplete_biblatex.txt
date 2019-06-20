@@ -1,6 +1,7 @@
 *deoplete_biblatex* Deoplete source for biblatex
 
-Author: Lion Waaser <extra.lion.w@gmail.com>
+Patched Author: Andrew Pilsch <andrew@pilsch.com>
+Original Author: Lion Waaser <extra.lion.w@gmail.com>
 
 ===============================================================================
 CONTENTS                                           *deoplete-biblatex-contents*
@@ -34,40 +35,46 @@ CONFIGURATION                                 *deoplete-biblatex-configuration*
 
 Change the *.bib file used:
 >
-  let g:deoplete#sources#biblatex#bibfile = '~/another_file.bib'
+  call deoplete#custom#var('biblatex', 'bibfile', '~/another-file.bib')
 <
 Default: '~/.bibliography.bib'
 
 Set a custom start pattern in python regex syntax:
 >
-  let g:deoplete#sources#biblatex#startpattern = '\['
+  call deoplete#custom#var('biblatex', 'startpattern, '\[')
 <
 Default: '\[(?:[\w,]+:)?'
 
 Set a custom key pattern in python regex syntax:
 >
-  let g:deoplete#sources#biblatex#keypattern = '\['
+  call deoplete#custom#var('biblatex', 'keypattern, '\[')
 <
 Default: 'r'@?[\w-]+'
 
 Set a delimiter between citations in python regex syntax:
 >
-  let g:deoplete#sources#biblatex#delimiter = ';'
+  call deoplete#custom#var('biblatex', 'delimiter', ';')
 <
 Default: ','
 
-Reloaded bibliography after a filechange change.
+Reload bibliography after a filechange change:
 >
-  let g:deoplete#sources#biblatex#delimiter = 1
+  call deoplete#custom#var('biblatex', 'reloadbibfileonchange', 1)
 <
 Default: 0
 
-You can use the |deoplete#custom#set()| function to change the |filetypes| for
+Display information about the source in a separate window:
+>
+  call deoplete#custom#var('biblatex', 'addinfo', 1)
+<
+Default: 0
+
+You can use the |deoplete#custom#source()| function to change the |filetypes| for
 this source.
 >
   call deoplete#custom#source('biblatex', 'filetypes', ['html'])
 <
-Default: ['rst']
+Default: ['pandoc', 'markdown']
 
 ===============================================================================
 LICENSE                                             *deoplete-biblatex-license*

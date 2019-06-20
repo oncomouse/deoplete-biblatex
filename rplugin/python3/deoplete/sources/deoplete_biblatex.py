@@ -40,8 +40,6 @@ class Source(Base):
 
     @property
     def __bibliography(self):
-        # output = re.sub(r'\x1b\[.*?m','', subprocess.Popen("bibtex-ls {}".format(quote(self.__bib_file)), stdout=subprocess.PIPE, shell=True).communicate()[0].decode("utf-8")).split("\n")[0:-1]
-        # return [i for i in list(map(self.__make_dictionary, output)) if i]
         if self.__reload_bibfile_on_change:
             mtime = os.stat(self.__bib_file).st_mtime
             if mtime != self.__bib_file_mtime:
