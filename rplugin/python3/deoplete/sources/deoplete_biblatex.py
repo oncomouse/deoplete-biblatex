@@ -43,7 +43,7 @@ class Source(Base):
                 "ID": match.group(5)
             }
         else:
-            print "Error: {}".format(line)
+            print("Error: {}".format(line))
             return None
 
     @property
