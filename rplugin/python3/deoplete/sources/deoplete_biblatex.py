@@ -32,7 +32,7 @@ class Source(Base):
         self.mark = '[bib]'
         self.name = 'biblatex'
 
-    def __make_dictionary(line):
+    def __make_dictionary(self, line):
         match = re.match(r'(^.*?)\s+\(([0-9]{4})\) (.*?),.*?,.*\[([^\]]+)\] \@(.*)$', line)
         if match:
             return {
