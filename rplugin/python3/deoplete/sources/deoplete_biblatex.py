@@ -142,6 +142,7 @@ class Source(Base):
         )
 
     def __entry_to_candidate(self, entry):
+        print(entry)
         candidate = {
             'abbr': entry['ID'],
             'word': entry['ID'],
