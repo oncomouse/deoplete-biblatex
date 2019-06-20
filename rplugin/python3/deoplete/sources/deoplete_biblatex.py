@@ -37,12 +37,13 @@ class Source(Base):
         if match:
             return {
                 "author": match.group(1),
-                "plain_year": match.group(2),
+                "plain_date": match.group(2),
                 "plain_title": match.group(3),
                 "TYPE": match.group(4),
                 "ID": match.group(5)
             }
         else:
+            print "Error: {}".format(line)
             return None
 
     @property
