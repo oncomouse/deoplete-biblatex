@@ -41,12 +41,10 @@ plugin manager.
 ~~~
 
    Plug 'Shougo/deoplete.nvim', { 'do': ':UpdateRemotePlugins' }
-   Plug 'lionawurscht/deoplete-biblatex'
-   
-.. _vim-plug: https://github.com/junegunn/vim-plug
+   Plug 'oncomouse/deoplete-biblatex'
+~~~
 
-Documentation
-=============
+## Documentation
 
 For information on the configuration see ``:help deoplete-biblatex``
 
