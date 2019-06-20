@@ -1,11 +1,13 @@
 #!/usr/bin/env
 import re
 import os
+import subprocess
+from shlex import quote
 
 from .base import Base
 from deoplete.util import load_external_module
 
-import bibtexparser
+# import bibtexparser
 
 load_external_module(__file__, 'sources/deoplete_biblatex')
 
@@ -15,50 +17,65 @@ MY_CODES = {
 }
 
 
-def bibtexparser_customizations(record):
-    record = bibtexparser.customization.author(record)
-    record = bibtexparser.customization.editor(record)
-    record = bibtexparser.customization.add_plaintext_fields(record)
-    return record
+# def bibtexparser_customizations(record):
+#     record = bibtexparser.customization.author(record)
+#     record = bibtexparser.customization.editor(record)
+#     record = bibtexparser.customization.add_plaintext_fields(record)
+#     return record
 
 
 class Source(Base):
     def __init__(self, vim):
         super().__init__(vim)
 
-        self.filetypes = ['rst', 'markdown']
+        self.filetypes = ['pandoc', 'markdown']
         self.mark = '[bib]'
         self.name = 'biblatex'
 
+    def __make_dictionary(line):
+        match = re.match(r'(^.*?)\s+\(([0-9]{4})\) (.*?),.*?,.*\[([^\]]+)\] \@(.*)$', line)
+        if match:
+            return {
+                "author": match.group(1),
+                "plain_year": match.group(2),
+                "plain_title": match.group(3),
+                "TYPE": match.group(4),
+                "ID": match.group(5)
+            }
+        else:
+            return None
+
     @property
     def __bibliography(self):
-        if self.__reload_bibfile_on_change:
-            mtime = os.stat(self.__bib_file).st_mtime
-            if mtime != self.__bib_file_mtime:
-                self.__bib_file_mtime = mtime
-                self.__read_bib_file()
+        output = re.sub(r'\x1b\[.*?m','', subprocess.Popen("bibtex-ls {}".format(quote('/Users/apilsch/Dropbox/Documents/Academic Stuff/library.bib')), stdout=subprocess.PIPE, shell=True).communicate()[0].decode("utf-8")).split("\n")[0:-1]
+        return list(map(self.__make_dictionary, output))
+        # if self.__reload_bibfile_on_change:
+        #     mtime = os.stat(self.__bib_file).st_mtime
+        #     if mtime != self.__bib_file_mtime:
+        #         self.__bib_file_mtime = mtime
+        #         self.__read_bib_file()
 
-        return self.__bibliography_cached
+        # return self.__bibliography_cached
 
-    def __read_bib_file(self):
-        try:
-            with open(self.__bib_file) as bf:
-                parser = bibtexparser.bparser.BibTexParser(
-                    ignore_nonstandard_types=False,
-                )
-                parser.customization = bibtexparser_customizations
-                bibliography = bibtexparser.load(
-                    bf,
-                    parser=parser,
-                ).entries_dict
+    # def __read_bib_file(self):
+    #     try:
+    #         with open(self.__bib_file) as bf:
+    #             parser = bibtexparser.bparser.BibTexParser(
+    #                 ignore_nonstandard_types=False,
+    #             )
+    #             parser.customization = bibtexparser_customizations
+    #             bibliography = bibtexparser.load(
+    #                 bf,
+    #                 parser=parser,
+    #             ).entries_dict
 
-                self.__bibliography_cached = bibliography
-        except FileNotFoundError:
-            self.vim.err_write(
-                '[deoplete-biblatex] No such file: {0}\n'.format(
-                    self.__bib_file,
-                ),
-            )
+    #             self.__bibliography_cached = bibliography
+    #     except FileNotFoundError:
+    #         self.vim.err_write(
+    #             '[deoplete-biblatex] No such file: {0}\n'.format(
+    #                 self.__bib_file,
+    #             ),
+    #         )
 
     def on_init(self, context):
         bib_file = context['vars'].get(
@@ -68,8 +85,8 @@ class Source(Base):
         bib_file = os.path.abspath(os.path.expanduser(bib_file))
 
         self.__bib_file = bib_file
-        self.__bib_file_mtime = os.stat(bib_file).st_mtime
-        self.__read_bib_file()
+        # self.__bib_file_mtime = os.stat(bib_file).st_mtime
+        # self.__read_bib_file()
 
         pattern_delimiter = context['vars'].get(
             'deoplete#sources#biblatex#delimiter',
