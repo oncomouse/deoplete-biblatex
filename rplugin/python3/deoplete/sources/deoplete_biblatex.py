@@ -47,17 +47,17 @@ class Source(Base):
 
     @property
     def __bibliography(self):
-        output = re.sub(r'\x1b\[.*?m','', subprocess.Popen("bibtex-ls {}".format(quote('/Users/apilsch/Dropbox/Documents/Academic Stuff/library.bib')), stdout=subprocess.PIPE, shell=True).communicate()[0].decode("utf-8")).split("\n")[0:-1]
-        return list(map(self.__make_dictionary, output))
-        # if self.__reload_bibfile_on_change:
-        #     mtime = os.stat(self.__bib_file).st_mtime
-        #     if mtime != self.__bib_file_mtime:
-        #         self.__bib_file_mtime = mtime
-        #         self.__read_bib_file()
+        if self.__reload_bibfile_on_change:
+            mtime = os.stat(self.__bib_file).st_mtime
+            if mtime != self.__bib_file_mtime:
+                self.__bib_file_mtime = mtime
+                self.__read_bib_file()
 
-        # return self.__bibliography_cached
+        return self.__bibliography_cached
 
-    # def __read_bib_file(self):
+    def __read_bib_file(self):
+        output = re.sub(r'\x1b\[.*?m','', subprocess.Popen("bibtex-ls {}".format(self.__bib_file), stdout=subprocess.PIPE, shell=True).communicate()[0].decode("utf-8")).split("\n")[0:-1]
+        self.__bibliography_cached = list(map(self.__make_dictionary, output))
     #     try:
     #         with open(self.__bib_file) as bf:
     #             parser = bibtexparser.bparser.BibTexParser(
@@ -85,8 +85,8 @@ class Source(Base):
         bib_file = os.path.abspath(os.path.expanduser(bib_file))
 
         self.__bib_file = bib_file
-        # self.__bib_file_mtime = os.stat(bib_file).st_mtime
-        # self.__read_bib_file()
+        self.__bib_file_mtime = os.stat(bib_file).st_mtime
+        self.__read_bib_file()
 
         pattern_delimiter = context['vars'].get(
             'deoplete#sources#biblatex#delimiter',
