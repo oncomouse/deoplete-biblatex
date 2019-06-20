@@ -157,7 +157,7 @@ class Source(Base):
         if self.__pattern.search(context['input']):
             candidates = [
                 self.__entry_to_candidate(entry)
-                for entry in self.__bibliography.values()
+                for entry in self.__bibliography
             ]
             return candidates
         else:
